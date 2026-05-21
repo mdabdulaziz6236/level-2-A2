@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken'
 import { pool } from '../../db';
-import type { TUser } from './auth.interface';
+import type { TUser, TUserLogin } from './auth.interface';
 import config from '../../config';
 
 
@@ -27,7 +27,7 @@ const signupUserIntoDB = async (payload: TUser) => {
 }
 
 
-const loginUserIntoDB = async (payload: { email: string, password: string }) => {
+const loginUserIntoDB = async (payload: TUserLogin) => {
     const { email, password } = payload;
 
     /* 1. check if the user exists */

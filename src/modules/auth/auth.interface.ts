@@ -4,3 +4,8 @@ export interface TUser {
     password: string,
     role?: "contributor" | "maintainer"
 }
+
+export interface TUserLogin {
+    email: string,
+    password: string
+}
