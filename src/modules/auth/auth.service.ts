@@ -1,6 +1,8 @@
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken'
 import { pool } from '../../db';
 import type { TUser } from './auth.interface';
+import config from '../../config';
 
 
 
@@ -25,8 +27,43 @@ const signupUserIntoDB = async (payload: TUser) => {
 }
 
 
+const loginUserIntoDB = async (payload: { email: string, password: string }) => {
+    const { email, password } = payload;
+
+    /* 1. check if the user exists */
+
+    const userData = await pool.query(
+        ` SELECT * FROM users WHERE email=$1 `,
+        [email]
+    )
+    if (userData.rowCount === 0) {
+        throw new Error("Invalid email")
+    }
+    const user = userData.rows[0]
+    /* 2. compare the password */
+    const matchPassword = await bcrypt.compare(password, user.password)
+    if (!matchPassword) {
+        throw new Error("Invalid password")
+    }
+
+    /* Generate Token */
+
+    const jwtPayload = {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        email: user.email
+    }
+    const accessToken = jwt.sign(jwtPayload, config.secret as string, { expiresIn: '1d' })
+
+
+    delete user.password
+    return { 'token': accessToken, 'user': user }
+}
+
 
 
 export const authService = {
-    signupUserIntoDB
+    signupUserIntoDB,
+    loginUserIntoDB
 }
