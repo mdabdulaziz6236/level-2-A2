@@ -24,6 +24,38 @@ const createIssue = async (req: Request, res: Response) => {
         })
     }
 }
+
+const deleteIssue = async (req: Request, res: Response) => {
+    const id = req.params.id
+    try {
+        const result = await issueService.issueDeleteFromDB(id as string, req)
+        sendResponse(res, {
+            statusCode: 200,
+            success: true,
+            message: "Issue deleted successfully",
+            data: result
+        })
+    } catch (error: any) {
+        const message = error?.message
+        let statusCode = 500
+        if (message === "Unauthorized") {
+            statusCode = 401
+        }
+        else if (message === "Forbidden") {
+            statusCode = 403
+        }
+        else if (message === "Issue Not Found") {
+            statusCode = 404
+        }
+        sendResponse(res, {
+            statusCode,
+            success: false,
+            message,
+            error: error
+        })
+    }
+}
 export const issueController = {
-    createIssue
+    createIssue,
+    deleteIssue
 }

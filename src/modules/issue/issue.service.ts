@@ -2,12 +2,12 @@ import jwt, { type JwtPayload } from 'jsonwebtoken'
 import type { TIssue } from "./issue.interface"
 import config from '../../config'
 import { pool } from '../../db'
+import { USER_ROLE } from '../../types'
 
 
 const issueCreateIntoDB = async (payload: TIssue, req: any) => {
 
     const { description, title, type } = payload
-    console.log(description, title, type)
     const token = req.headers.authorization;
     if (!token) {
         throw new Error("Unauthorized")
@@ -33,6 +33,36 @@ const issueCreateIntoDB = async (payload: TIssue, req: any) => {
 }
 
 
+const issueDeleteFromDB = async (id: string, req: any) => {
+    const token = req.headers.authorization
+    if (!token) {
+        throw new Error("Unauthorized")
+    }
+    let decoded: JwtPayload
+    try {
+        decoded = jwt.verify(
+            token,
+            config.secret as string
+        ) as JwtPayload
+    } catch {
+        throw new Error("Invalid or expired token")
+    }
+    req.user = decoded
+    // role check
+    if (req.user.role !== USER_ROLE.maintainer) {
+        throw new Error("Forbidden")
+    }
+    const result = await pool.query(
+        `DELETE FROM issues WHERE id=$1`,
+        [id]
+    )
+    if (result.rowCount === 0) {
+        throw new Error("Issue Not Found")
+    }
+    console.log(result)
+    return result.rows[0]
+}
 export const issueService = {
-    issueCreateIntoDB
+    issueCreateIntoDB,
+    issueDeleteFromDB
 }

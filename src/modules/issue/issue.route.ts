@@ -5,6 +5,7 @@ const router = Router();
 
 
 router.post('/', issueController.createIssue)
+router.delete('/:id', issueController.deleteIssue)
 
 
 
