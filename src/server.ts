@@ -1,14 +1,10 @@
-import express, { type Application, type Request, type Response } from 'express'
-const app:Application = express()
-const port = 5000
+import app from "./app"
+import config from "./config"
 
-app.get('/', (req:Request, res:Response) => {
-  res.status(200).json({
-    "message":"Express Server",
-    "author":"DevPulse"
+
+const main = () => {
+  app.listen(config.port, () => {
+    console.log(`DevPulse server is runnig on port ${config.port}`)
   })
-})
-
-app.listen(port, () => {
-  console.log(`DevPulse server is runnig on port ${port}`)
-})
+}
+main()
