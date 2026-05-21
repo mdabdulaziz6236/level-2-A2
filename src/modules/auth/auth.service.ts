@@ -1,9 +1,10 @@
 import bcrypt from 'bcrypt'
 import { pool } from '../../db';
+import type { TUser } from './auth.interface';
 
 
 
-const signupUserIntoDB = async (payload: any) => {
+const signupUserIntoDB = async (payload: TUser) => {
 
     const { name, email, password, role } = payload
     const isUserExists = await pool.query(
@@ -20,7 +21,7 @@ const signupUserIntoDB = async (payload: any) => {
         RETURNING *
         `, [name, email, hashPassword, role])
     delete result.rows[0].password;
-    return result
+    return result.rows[0]
 }
 
 
