@@ -3,6 +3,7 @@ import type { TIssue } from "./issue.interface"
 import config from '../../config'
 import { pool } from '../../db'
 import { USER_ROLE } from '../../types'
+import { title } from 'process'
 
 
 const issueCreateIntoDB = async (payload: TIssue, req: any) => {
@@ -32,7 +33,6 @@ const issueCreateIntoDB = async (payload: TIssue, req: any) => {
     return result.rows[0]
 }
 
-
 const issueDeleteFromDB = async (id: string, req: any) => {
     const token = req.headers.authorization
     if (!token) {
@@ -59,10 +59,38 @@ const issueDeleteFromDB = async (id: string, req: any) => {
     if (result.rowCount === 0) {
         throw new Error("Issue Not Found")
     }
-    console.log(result)
     return result.rows[0]
 }
+
+const getSingleIssueFromDB = async (id: string) => {
+
+    const result = await pool.query(
+        `SELECT * FROM issues WHERE id=$1`,
+        [id]
+    )
+    if (result.rowCount === 0) {
+        throw new Error("Issue Not Found")
+    }
+    const issue = result.rows[0]
+    const reporterResult = await pool.query(` 
+        SELECT id,name,role FROM users WHERE id=$1
+        `, [issue.reporter_id])
+    const reporter = reporterResult.rows[0]
+
+    return {
+        id: issue.id,
+        title: issue.title,
+        description: issue.description,
+        type: issue.type,
+        status: issue.status,
+        reporter: reporter,
+        created_at: issue.created_at,
+        updated_at: issue.updated_at
+    }
+}
+
 export const issueService = {
     issueCreateIntoDB,
-    issueDeleteFromDB
+    issueDeleteFromDB,
+    getSingleIssueFromDB
 }
