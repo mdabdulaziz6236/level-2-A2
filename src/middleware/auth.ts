@@ -9,11 +9,7 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
 
     const token = req.headers.authorization
     if (!token) {
-        return sendResponse(res, {
-            statusCode: 401,
-            success: false,
-            message: "Unauthorized"
-        })
+        throw new Error("Unauthorized")
     }
     try {
         const decoded = jwt.verify(
@@ -31,7 +27,7 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
             return sendResponse(res, {
                 statusCode: 404,
                 success: false,
-                message: "User not found!"
+                message: "User Not Found"
             })
         }
         req.user = userData.rows[0]

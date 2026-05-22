@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { authService } from "./auth.service";
 import sendResponse from "../../utils/sendResponse";
+import handleError from "../../utils/handleError";
 
 const signupUser = async (req: Request, res: Response) => {
     try {
@@ -12,12 +13,7 @@ const signupUser = async (req: Request, res: Response) => {
             data: result
         })
     } catch (error: any) {
-        sendResponse(res, {
-            statusCode: error.message === "User already exists" ? 409 : 500,
-            success: false,
-            message: error.message,
-            error
-        })
+        handleError(res, error)
     }
 }
 
@@ -31,12 +27,7 @@ const loginUser = async (req: Request, res: Response) => {
             data: result
         })
     } catch (error: any) {
-        sendResponse(res, {
-            statusCode: 401,
-            success: false,
-            message: error.message,
-            error
-        })
+        handleError(res, error)
     }
 }
 export const authController = {

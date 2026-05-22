@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import sendResponse from "../../utils/sendResponse";
 import { issueService } from "./issue.service";
+import handleError from "../../utils/handleError";
 
 const createIssue = async (req: Request, res: Response) => {
     try {
@@ -12,16 +13,7 @@ const createIssue = async (req: Request, res: Response) => {
             data: result
         })
     } catch (error: any) {
-        const message = error?.message
-        let statusCode = 500
-        if (message === "Unauthorized") statusCode = 401
-        else if (message === "User Not Found") statusCode = 404
-        sendResponse(res, {
-            statusCode,
-            success: false,
-            message: message,
-            error: error
-        })
+        handleError(res, error)
     }
 }
 
@@ -36,23 +28,7 @@ const deleteIssue = async (req: Request, res: Response) => {
             data: result
         })
     } catch (error: any) {
-        const message = error?.message
-        let statusCode = 500
-        if (message === "Unauthorized") {
-            statusCode = 401
-        }
-        else if (message === "Forbidden") {
-            statusCode = 403
-        }
-        else if (message === "Issue Not Found") {
-            statusCode = 404
-        }
-        sendResponse(res, {
-            statusCode,
-            success: false,
-            message,
-            error: error
-        })
+        handleError(res, error)
     }
 }
 
@@ -66,17 +42,7 @@ const getSingleIssue = async (req: Request, res: Response) => {
             data: result
         })
     } catch (error: any) {
-        const message = error?.message
-        let statusCode = 500
-        if (message === "Issue Not Found") {
-            statusCode = 404
-        }
-        sendResponse(res, {
-            statusCode,
-            success: false,
-            message,
-            error: error
-        })
+        handleError(res, error)
     }
 }
 
@@ -94,12 +60,7 @@ const getAllIssues = async (req: Request, res: Response) => {
 
     } catch (error: any) {
 
-        sendResponse(res, {
-            statusCode: 500,
-            success: false,
-            message: error?.message,
-            error: error
-        })
+        handleError(res, error)
     }
 }
 
@@ -124,20 +85,7 @@ const updateIssue = async (req: Request, res: Response) => {
 
     } catch (error: any) {
 
-        const message = error?.message
-
-        let statusCode = 500
-
-        if (message === "Unauthorized") statusCode = 401
-        else if (message === "Forbidden") statusCode = 403
-        else if (message === "Issue Not Found") statusCode = 404
-
-        sendResponse(res, {
-            statusCode,
-            success: false,
-            message,
-            error: error
-        })
+        handleError(res, error)
     }
 }
 export const issueController = {
