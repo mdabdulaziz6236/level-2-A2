@@ -11,8 +11,8 @@ app.use(express.text());
 app.use(express.urlencoded({ extended: true }))
 app.get('/', (req: Request, res: Response) => {
   res.status(200).json({
-    "message": "Express Server",
-    "author": "DevPulse"
+    "message": "Welcome to DevPulse Issue Tracker API",
+    "author": "MD. ABDUL AZIZ",
   })
 })
 

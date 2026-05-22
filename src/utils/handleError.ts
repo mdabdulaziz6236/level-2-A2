@@ -43,7 +43,7 @@ const handleError = (
         statusCode,
         success: false,
         message,
-        error
+        error: error?.detail
     })
 }
 
