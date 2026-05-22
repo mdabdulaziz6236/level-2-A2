@@ -1,9 +1,8 @@
 import jwt, { type JwtPayload } from 'jsonwebtoken'
-import type { TIssue } from "./issue.interface"
+import type { TIssue, TIssueQuery } from "./issue.interface"
 import config from '../../config'
 import { pool } from '../../db'
 import { USER_ROLE } from '../../types'
-import { title } from 'process'
 
 
 const issueCreateIntoDB = async (payload: TIssue, req: any) => {
@@ -89,8 +88,87 @@ const getSingleIssueFromDB = async (id: string) => {
     }
 }
 
+const getAllIssuesFromDB = async (query: TIssueQuery) => {
+
+    const { sort = "newest", type, status } = query
+
+    let sql = `
+        SELECT * FROM issues
+        WHERE 1=1
+    `
+
+    const values: any[] = []
+
+    // filter by type
+    if (type) {
+        values.push(type)
+        sql += ` AND type = $${values.length}`
+    }
+
+    // filter by status
+    if (status) {
+        values.push(status)
+        sql += ` AND status = $${values.length}`
+    }
+
+    // sorting
+    if (sort === "oldest") {
+        sql += ` ORDER BY created_at ASC`
+    } else {
+        sql += ` ORDER BY created_at DESC`
+    }
+
+    // fetch issues
+    const result = await pool.query(sql, values)
+
+    const issues = result.rows
+    if (issues.length === 0) {
+        throw new Error("No Issues")
+    }
+
+    // get reporter ids
+    const reporterIds = [
+        ...new Set(issues.map(issue => issue.reporter_id))
+    ]
+
+    // fetch reporters
+    const reportersResult = await pool.query(
+        `
+        SELECT id, name, role
+        FROM users
+        WHERE id = ANY($1)
+        `,
+        [reporterIds]
+    )
+
+    const reporters = reportersResult.rows
+
+    // map reporter data
+    const formattedIssues = issues.map(issue => {
+
+        const reporter = reporters.find(
+            user => user.id === issue.reporter_id
+        )
+        return {
+            id: issue.id,
+            title: issue.title,
+            description: issue.description,
+            type: issue.type,
+            status: issue.status,
+
+            reporter: reporter,
+
+            created_at: issue.created_at,
+            updated_at: issue.updated_at
+        }
+    })
+
+    return formattedIssues
+}
+
 export const issueService = {
     issueCreateIntoDB,
     issueDeleteFromDB,
-    getSingleIssueFromDB
+    getSingleIssueFromDB,
+    getAllIssuesFromDB
 }
