@@ -1,6 +1,4 @@
-import jwt, { type JwtPayload } from 'jsonwebtoken'
 import type { TIssue, TIssueQuery } from "./issue.interface"
-import config from '../../config'
 import { pool } from '../../db'
 import { USER_ROLE } from '../../types'
 
@@ -8,23 +6,6 @@ import { USER_ROLE } from '../../types'
 const issueCreateIntoDB = async (payload: TIssue, req: any) => {
 
     const { description, title, type } = payload
-    const token = req.headers.authorization;
-    if (!token) {
-        throw new Error("Unauthorized")
-    }
-    let decoded: JwtPayload
-    try {
-        decoded = jwt.verify(token, config.secret as string) as JwtPayload
-    } catch (err) {
-        throw new Error("Invalid or expired token")
-    }
-    req.user = decoded
-    const userData = await pool.query(` 
-        SELECT * FROM users WHERE email=$1
-        `, [req.user.email])
-    if (userData.rowCount === 0) {
-        throw new Error("User Not Found")
-    }
     const result = await pool.query(` 
         INSERT INTO issues(description, title, type, reporter_id) VALUES($1,$2,$3,$4)
         RETURNING * `, [description, title, type, req.user.id])
@@ -33,21 +14,6 @@ const issueCreateIntoDB = async (payload: TIssue, req: any) => {
 }
 
 const issueDeleteFromDB = async (id: string, req: any) => {
-    const token = req.headers.authorization
-    if (!token) {
-        throw new Error("Unauthorized")
-    }
-    let decoded: JwtPayload
-    try {
-        decoded = jwt.verify(
-            token,
-            config.secret as string
-        ) as JwtPayload
-    } catch {
-        throw new Error("Invalid or expired token")
-    }
-    req.user = decoded
-    // role check
     if (req.user.role !== USER_ROLE.maintainer) {
         throw new Error("Forbidden")
     }
@@ -172,19 +138,6 @@ const updateIssueIntoDB = async (
     req: any
 ) => {
 
-    const token = req.headers.authorization
-    if (!token) {
-        throw new Error("Unauthorized")
-    }
-    let decoded: JwtPayload
-    try {
-        decoded = jwt.verify(token, config.secret as string) as JwtPayload
-    } catch {
-        throw new Error("Invalid or expired token")
-    }
-
-    req.user = decoded
-
     // find issue
     const issueResult = await pool.query(
         `SELECT * FROM issues WHERE id=$1`,
@@ -210,8 +163,7 @@ const updateIssueIntoDB = async (
     const parsedPayload = typeof payload === 'string' ? JSON.parse(payload) : payload;
     const { title, description, type } = parsedPayload;
 
-
-    //  autho status change role
+    //  auto status change role
     let newStatus = issue.status
 
     if (issue.status === "open") {
@@ -233,9 +185,9 @@ const updateIssueIntoDB = async (
         `,
         [title, description, type, newStatus, id]
     )
-
     return result.rows[0]
 }
+
 export const issueService = {
     issueCreateIntoDB,
     issueDeleteFromDB,
