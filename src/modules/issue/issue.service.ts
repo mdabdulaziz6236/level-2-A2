@@ -166,9 +166,80 @@ const getAllIssuesFromDB = async (query: TIssueQuery) => {
     return formattedIssues
 }
 
+const updateIssueIntoDB = async (
+    id: string,
+    payload: TIssue,
+    req: any
+) => {
+
+    const token = req.headers.authorization
+    if (!token) {
+        throw new Error("Unauthorized")
+    }
+    let decoded: JwtPayload
+    try {
+        decoded = jwt.verify(token, config.secret as string) as JwtPayload
+    } catch {
+        throw new Error("Invalid or expired token")
+    }
+
+    req.user = decoded
+
+    // find issue
+    const issueResult = await pool.query(
+        `SELECT * FROM issues WHERE id=$1`,
+        [id]
+    )
+
+    if (issueResult.rowCount === 0) {
+        throw new Error("Issue Not Found")
+    }
+
+    const issue = issueResult.rows[0]
+
+    // role rules
+    const isMaintainer = req.user.role === "maintainer"
+    const isOwner = req.user.id === issue.reporter_id
+
+    if (!isMaintainer) {
+        if (!isOwner || issue.status !== "open") {
+            throw new Error("Forbidden")
+        }
+    }
+
+    const parsedPayload = typeof payload === 'string' ? JSON.parse(payload) : payload;
+    const { title, description, type } = parsedPayload;
+
+
+    //  autho status change role
+    let newStatus = issue.status
+
+    if (issue.status === "open") {
+        newStatus = "in_progress"
+    } else if (issue.status === "in_progress") {
+        newStatus = 'resolved'
+    }
+
+    const result = await pool.query(
+        `
+        UPDATE issues SET
+            title=COALESCE($1, title),
+            description=COALESCE($2, description),
+            type=COALESCE($3, type),
+            status= $4,
+            updated_at = NOW()
+        WHERE id = $5
+        RETURNING *
+        `,
+        [title, description, type, newStatus, id]
+    )
+
+    return result.rows[0]
+}
 export const issueService = {
     issueCreateIntoDB,
     issueDeleteFromDB,
     getSingleIssueFromDB,
-    getAllIssuesFromDB
+    getAllIssuesFromDB,
+    updateIssueIntoDB
 }

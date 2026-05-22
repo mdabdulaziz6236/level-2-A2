@@ -79,6 +79,7 @@ const getSingleIssue = async (req: Request, res: Response) => {
         })
     }
 }
+
 const getAllIssues = async (req: Request, res: Response) => {
 
     try {
@@ -101,9 +102,48 @@ const getAllIssues = async (req: Request, res: Response) => {
         })
     }
 }
+
+const updateIssue = async (req: Request, res: Response) => {
+
+    const id = req.params.id
+
+    try {
+
+        const result = await issueService.updateIssueIntoDB(
+            id as string,
+            req.body,
+            req as any
+        )
+
+        sendResponse(res, {
+            statusCode: 200,
+            success: true,
+            message: "Issue updated successfully",
+            data: result
+        })
+
+    } catch (error: any) {
+
+        const message = error?.message
+
+        let statusCode = 500
+
+        if (message === "Unauthorized") statusCode = 401
+        else if (message === "Forbidden") statusCode = 403
+        else if (message === "Issue Not Found") statusCode = 404
+
+        sendResponse(res, {
+            statusCode,
+            success: false,
+            message,
+            error: error
+        })
+    }
+}
 export const issueController = {
     createIssue,
     deleteIssue,
     getSingleIssue,
-    getAllIssues
+    getAllIssues,
+    updateIssue
 }

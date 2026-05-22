@@ -7,6 +7,7 @@ router.get('/:id', issueController.getSingleIssue)
 router.get('/', issueController.getAllIssues)
 router.post('/', issueController.createIssue)
 router.delete('/:id', issueController.deleteIssue)
+router.patch('/:id', issueController.updateIssue)
 
 
 
